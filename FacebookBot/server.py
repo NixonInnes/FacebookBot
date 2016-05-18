@@ -19,6 +19,7 @@ def bot():
 
     if request.method == 'POST':
         post = request.json
+        print(post)
         events = post['entry'][0]['messaging']
         for event in events:
             if event.get('message', False) and event.get('sender', False):
