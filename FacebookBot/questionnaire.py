@@ -1,3 +1,4 @@
+import json
 
 QUESTIONS = [
     {
@@ -51,7 +52,7 @@ class Questionnaire(object):
     def get_current_question(self):
         q = QUESTIONS[self.current_question_id]
         if q.get('answers'):
-            return q['question'], [(a, (q['id'], a)) for a in q['answers']]
+            return q['question'], [(a, json.dumps([q['id'], a])) for a in q['answers']]
         return q['question'], None
 
     def set_current_answer(self, answer):

@@ -32,8 +32,8 @@ def bot():
             else:
                 q = questionnaires.get(sender)
 
-            if event.get('messaging') and event['messaging'].get('postback'):
-                payload = event['messaging']['postback'].get('payload')
+            if event.get('postback'):
+                payload = event['postback'].get('payload')
                 payload = json.loads(payload)
                 q.answers[payload[0]] = payload[1]
                 q.check_valid_answer()
