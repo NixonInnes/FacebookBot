@@ -1,12 +1,15 @@
 from flask import Flask, request
-import os
+import os, json
 from .messenger import Messenger
+from .questionnaire import Questionnaire
 
 VERIFY_TOKEN = os.getenv('MESSENGER_VERIFY_TOKEN', 'TEST_TOKEN_09345h349534985h3894h5398h')
 FACEBOOK_TOKEN = os.getenv('FACEBOOK_TOKEN', 'EAAH9MS2hZCtYBAJKiWzoZBinOo6BtLqJ193KWw6zkQZAeH3dMhLGBB0PXVy7gMoZAbk8KZCowlBzEHnpZB4mhspx99NdR7Ts3QIDrpZCuE7rJhVZAaQzvWWlEu6JQ2ZBO9JSZAgtogGkCNo4px2eo1mAPP1Aoa1zjFOSmSm7s0ndkZBAly6dn7oob6o')
 
 app = Flask(__name__)
 messenger = Messenger(FACEBOOK_TOKEN)
+
+questionnaires = {}
 
 
 @app.route("/webhook/7ce461549aaaac965a753cb7abcd0807ca845087a053a007b5", methods=['GET', 'POST'])
@@ -22,10 +25,29 @@ def bot():
         print(post)
         events = post['entry'][0]['messaging']
         for event in events:
-            if event.get('message', False) and event.get('sender', False):
+            sender = event['sender'].get('id')
+            if sender not in questionnaires:
+                q = Questionnaire(sender)
+                questionnaires[sender] = q
+            else:
+                q = questionnaires.get(sender)
+
+            if event.get('messaging') and event['messaging'].get('postback'):
+                payload = event['messaging']['postback'].get('payload')
+                payload = json.loads(payload)
+                q.answers[payload[0]] = payload[1]
+                q.check_valid_answer()
+
+            if event.get('message'):
                 message = event['message'].get('text')
-                sender_id = event['sender'].get('id')
-                messenger.send(sender_id, message)
+                if q.get_current_question()[1] is None:
+                    q.set_current_answer(message)
+                    q.check_valid_answer()
+
+            if q.get_current_question()[1] is None:
+                messenger.send(sender, q.get_current_question()[0])
+            else:
+                messenger.send_q(sender, q.get_current_question()[0], q.get_current_question()[1])
         return '', 200
 
 
