@@ -29,14 +29,22 @@ class Messenger(object):
         params = {'access_token': self.access_token}
         json = {
             'recipient': {'id': recipient_id},
-            'message': {'text': question}
+            'message': {
+                'attachment': {
+                    'type': 'template',
+                    'payload': {
+                        'template_type': 'button',
+                        'text': question,
+                    }
+                }
+            },
         }
 
         buttons = []
         for answer in answers:
             buttons.append({'type': 'postback', 'title': answer[0], 'payload': answer[1]})
 
-        json['buttons'] = buttons
+        json['message']['attachment']['payload']['buttons'] = buttons
 
         response = requests.post(API_URL, headers=headers, params=params, json=json)
 
