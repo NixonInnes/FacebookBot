@@ -1,4 +1,3 @@
-import json
 
 QUESTIONS = [
     {
@@ -17,8 +16,7 @@ QUESTIONS = [
         'id': 'property_type',
         'question': 'What is the property type?',
         'answers': [
-            'Construction Site',
-            'Farm',
+            'Construction Site or Farm',
             'Public Building',
             'Other'
         ]
@@ -46,13 +44,13 @@ QUESTIONS = [
 class Questionnaire(object):
     def __init__(self, user_id):
         self.user = user_id
-        self.answers = {q.id: None for q in QUESTIONS}
+        self.answers = {q['id']: None for q in QUESTIONS}
         self.current_question_id = 0
 
     def get_current_question(self):
         q = QUESTIONS[self.current_question_id]
         if q.get('answers'):
-            return q['question'], [(a, json.dumps([q['id'], a])) for a in q['answers']]
+            return q['question'], [(a, (q['id'], a)) for a in q['answers']]
         return q['question'], None
 
     def set_current_answer(self, answer):
@@ -65,7 +63,12 @@ class Questionnaire(object):
             print('Trying to assign answer to invalid key %s' % key)
 
     def check_valid_answer(self):
+        print('Checking current answer...')
+        print('Current answer: %s' %
+              self.answers[QUESTIONS[self.current_question_id]['id']])
         if self.answers[QUESTIONS[self.current_question_id]['id']] is not None:
             self.current_question_id += 1
+            print('Current answer is valid')
             return True
+        print('Current answer is not valid')
         return False

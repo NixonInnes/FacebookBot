@@ -1,4 +1,4 @@
-import requests
+import requests, json
 
 API_URL = "https://graph.facebook.com/v2.6/me/messages"
 
@@ -11,13 +11,14 @@ class Messenger(object):
     def send(self, recipient_id, message):
         headers = {'Content-Type': 'application/json'}
         params = {'access_token': self.access_token}
-        json = {
+        data = {
             'recipient': {'id': recipient_id},
             'message': {'text': message}
         }
 
-        response = requests.post(API_URL, headers=headers, params=params, json=json)
-
+        response = requests.post(API_URL, headers=headers, params=params, json=data)
+        print('Response OK: %s' % response.ok)
+        print('Response: %s' % response.json)
         #if not response.ok:
             # log error
             #pass
@@ -27,7 +28,7 @@ class Messenger(object):
     def send_q(self, recipient_id, question, answers):
         headers = {'Content-Type': 'application/json'}
         params = {'access_token': self.access_token}
-        json = {
+        data = {
             'recipient': {'id': recipient_id},
             'message': {
                 'attachment': {
@@ -42,12 +43,13 @@ class Messenger(object):
 
         buttons = []
         for answer in answers:
-            buttons.append({'type': 'postback', 'title': answer[0], 'payload': answer[1]})
+            buttons.append({'type': 'postback', 'title': answer[0], 'payload': json.dumps(answer[1])})
 
-        json['message']['attachment']['payload']['buttons'] = buttons
+        data['message']['attachment']['payload']['buttons'] = buttons
 
-        response = requests.post(API_URL, headers=headers, params=params, json=json)
-
+        response = requests.post(API_URL, headers=headers, params=params, json=data)
+        print('Response OK: %s' % response.ok)
+        print('Response: %s' % response.json())
         # if not response.ok:
         # log error
         # pass
