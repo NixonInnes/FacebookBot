@@ -1,4 +1,7 @@
 import requests, json
+from . import get_logger
+
+logger = get_logger(__name__)
 
 API_URL = "https://graph.facebook.com/v2.6/me/messages"
 
@@ -17,8 +20,8 @@ class Messenger(object):
         }
 
         response = requests.post(API_URL, headers=headers, params=params, json=data)
-        print('Response OK: %s' % response.ok)
-        print('Response: %s' % response.json)
+        logger.debug('Response OK: %s' % response.ok)
+        logger.debug('Response: %s' % response.json)
         #if not response.ok:
             # log error
             #pass
@@ -48,8 +51,8 @@ class Messenger(object):
         data['message']['attachment']['payload']['buttons'] = buttons
 
         response = requests.post(API_URL, headers=headers, params=params, json=data)
-        print('Response OK: %s' % response.ok)
-        print('Response: %s' % response.json())
+        logger.debug('Response OK: %s' % response.ok)
+        logger.debug('Response: %s' % response.json())
         # if not response.ok:
         # log error
         # pass

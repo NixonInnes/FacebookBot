@@ -2,6 +2,9 @@ from flask import Flask, request
 import os, json
 from .messenger import Messenger
 from .questionnaire import Questionnaire
+from . import get_logger
+
+logger = get_logger(__name__)
 
 VERIFY_TOKEN = os.getenv('MESSENGER_VERIFY_TOKEN', 'TEST_TOKEN_09345h349534985h3894h5398h')
 FACEBOOK_TOKEN = os.getenv('FACEBOOK_TOKEN', 'EAAH9MS2hZCtYBAJKiWzoZBinOo6BtLqJ193KWw6zkQZAeH3dMhLGBB0PXVy7gMoZAbk8KZCowlBzEHnpZB4mhspx99NdR7Ts3QIDrpZCuE7rJhVZAaQzvWWlEu6JQ2ZBO9JSZAgtogGkCNo4px2eo1mAPP1Aoa1zjFOSmSm7s0ndkZBAly6dn7oob6o')
@@ -24,39 +27,39 @@ def bot():
         post = request.json
         events = post['entry'][0]['messaging']
         for event in events:
-            print(event)
+            logger.debug(event)
             sender = event['sender'].get('id')
             if sender not in questionnaires:
                 q = Questionnaire(sender)
                 questionnaires[sender] = q
-                print('Added new questionnaire')
+                logger.debug('Added new questionnaire')
             else:
-                print('Selecting existing questionnaire')
+                logger.debug('Selecting existing questionnaire')
                 q = questionnaires.get(sender)
 
-            print('Current question: %s\nAnswers: %s' % q.get_current_question())
+            logger.debug('Current question: %s\nAnswers: %s' % q.get_current_question())
 
             if event.get('postback'):
-                print('Received postback')
+                logger.debug('Received postback')
                 payload = event['postback'].get('payload')
-                print('Payload: %s' % payload)
+                logger.debug('Payload: %s' % payload)
                 payload = json.loads(payload)
                 q.set_answer(payload[0], payload[1])
                 q.check_valid_answer()
 
             if event.get('message'):
-                print('Received message')
+                logger.debug('Received message')
                 message = event['message'].get('text')
-                print('Message: %s' % message)
+                logger.debug('Message: %s' % message)
                 if q.get_current_question()[1] is None:
                     q.set_current_answer(message)
                     q.check_valid_answer()
 
             if q.get_current_question()[1] is None:
-                print('Sending message')
+                logger.debug('Sending message')
                 messenger.send(sender, q.get_current_question()[0])
             else:
-                print('Sending buttons')
+                logger.debug('Sending buttons')
                 messenger.send_q(sender, q.get_current_question()[0], q.get_current_question()[1])
         return '', 200
 

@@ -1,3 +1,7 @@
+import logging
+from . import get_logger
+
+logger = get_logger(__name__)
 
 QUESTIONS = [
     {
@@ -60,15 +64,15 @@ class Questionnaire(object):
         if key in self.answers:
             self.answers[key] = answer
         else:
-            print('Trying to assign answer to invalid key %s' % key)
+            logger.debug('Trying to assign answer to invalid key %s' % key)
 
     def check_valid_answer(self):
-        print('Checking current answer...')
-        print('Current answer: %s' %
+        logger.debug('Checking current answer...')
+        logger.debug('Current answer: %s' %
               self.answers[QUESTIONS[self.current_question_id]['id']])
         if self.answers[QUESTIONS[self.current_question_id]['id']] is not None:
             self.current_question_id += 1
-            print('Current answer is valid')
+            logger.debug('Current answer is valid')
             return True
-        print('Current answer is not valid')
+        logger.debug('Current answer is not valid')
         return False
