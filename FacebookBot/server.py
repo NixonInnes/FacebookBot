@@ -1,25 +1,33 @@
 from flask import Flask, request
 import os, json
-from .messenger import Messenger
+from .messenger import Messenger, Message
 from .questionnaire import Questionnaire
 from . import get_logger
 
 logger = get_logger(__name__)
 
-VERIFY_TOKEN = os.getenv('MESSENGER_VERIFY_TOKEN', 'TEST_TOKEN_09345h349534985h3894h5398h')
-FACEBOOK_TOKEN = os.getenv('FACEBOOK_TOKEN', 'EAAH9MS2hZCtYBAJKiWzoZBinOo6BtLqJ193KWw6zkQZAeH3dMhLGBB0PXVy7gMoZAbk8KZCowlBzEHnpZB4mhspx99NdR7Ts3QIDrpZCuE7rJhVZAaQzvWWlEu6JQ2ZBO9JSZAgtogGkCNo4px2eo1mAPP1Aoa1zjFOSmSm7s0ndkZBAly6dn7oob6o')
+WEBHOOK_VERIFY_TOKEN = os.getenv('WEBHOOK_VERIFY_TOKEN')
+if not WEBHOOK_VERIFY_TOKEN:
+    logger.error('WEBHOOK_VERIFY_TOKEN is not defined in the environment variables.')
+WEBHOOK_URL_EXTENSION = os.getenv('WEBHOOK_URL_EXTENSION')
+if not WEBHOOK_URL_EXTENSION:
+    logger.error('WEBHOOK_URL_EXTENSION is not defined in the environment variables.')
+FACEBOOK_PAGE_TOKEN = os.getenv('FACEBOOK_PAGE_TOKEN')
+if not FACEBOOK_PAGE_TOKEN:
+    logger.error('FACEBOOK_PAGE_TOKEN is not defined in the environment variables.')
 
 app = Flask(__name__)
-messenger = Messenger(FACEBOOK_TOKEN)
+messenger = Messenger(FACEBOOK_PAGE_TOKEN)
 
 questionnaires = {}
+complete_questionnaires = []
 
 
-@app.route("/webhook/7ce461549aaaac965a753cb7abcd0807ca845087a053a007b5", methods=['GET', 'POST'])
+@app.route("/webhook/"+WEBHOOK_URL_EXTENSION, methods=['GET', 'POST'])
 def bot():
     if request.method == 'GET':
         token = request.args.get('hub.verify_token')
-        if token == VERIFY_TOKEN:
+        if token == WEBHOOK_VERIFY_TOKEN:
             return request.args.get('hub.challenge')
         return 'Bad Token'
 
@@ -29,41 +37,40 @@ def bot():
         for event in events:
             logger.debug(event)
             sender = event['sender'].get('id')
-            if sender not in questionnaires:
-                q = Questionnaire(sender)
-                questionnaires[sender] = q
-                logger.debug('Added new questionnaire')
+
+            payload = json.loads(event['postback'].get('payload')) if event.get('postback') else None
+            message = event['message'].get('text') if event.get('message') else None
+
+            if sender in questionnaires:
+                q = questionnaires[sender]
+                if payload:
+                    if payload.get('type') == 'questionnaire_answer':
+                        q.set_answer(payload['data']['answer'], key=payload['data']['question_key'])
+                        q.check_valid_answer()
+
+                elif message:
+                    if q.expect_input:
+                        q.set_answer(message)
+                        q.check_valid_answer()
+
+                if q.complete:
+                    messenger.send(sender, Message(text='The questionnare is complete!'))
+                    complete_questionnaires.append(
+                        {
+                            'user': sender,
+                            'answers': q.answers
+                        }
+                    )
+                    questionnaires.pop(sender)
+                else:
+                    messenger.send(sender, q.get_current_question())
+
             else:
-                logger.debug('Selecting existing questionnaire')
-                q = questionnaires.get(sender)
+                if payload:
+                    if payload.get('type') == 'start_questionnaire':
+                        q = Questionnaire(sender)
+                        questionnaires[sender] = q
+                        logger.debug('Added new questionnaire')
+                        messenger.send(sender, q.get_current_question())
 
-            logger.debug('Current question: %s\nAnswers: %s' % q.get_current_question())
-
-            if event.get('postback'):
-                logger.debug('Received postback')
-                payload = event['postback'].get('payload')
-                logger.debug('Payload: %s' % payload)
-                payload = json.loads(payload)
-                q.set_answer(payload[0], payload[1])
-                q.check_valid_answer()
-
-            if event.get('message'):
-                logger.debug('Received message')
-                message = event['message'].get('text')
-                logger.debug('Message: %s' % message)
-                if q.get_current_question()[1] is None:
-                    q.set_current_answer(message)
-                    q.check_valid_answer()
-
-            if q.get_current_question()[1] is None:
-                logger.debug('Sending message')
-                messenger.send(sender, q.get_current_question()[0])
-            else:
-                logger.debug('Sending buttons')
-                messenger.send_q(sender, q.get_current_question()[0], q.get_current_question()[1])
-        return '', 200
-
-
-if __name__ == '__main__':
-    ssl_context = ('certs/fullchain.pem', 'certs/privkey.pem')
-    app.run(host='0.0.0.0', port=5000, ssl_context=ssl_context)
+        return 'success', 200

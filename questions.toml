@@ -1,0 +1,39 @@
+# This is the questions bank
+
+[[questions]]
+key = "address"
+question = "What is the address of the property?"
+
+[[questions]]
+key = "output"
+question = "What is the desired output?"
+answers = [
+    "Images & Video",
+    "Maps & Data"
+]
+
+[[questions]]
+key = "property_type"
+question = "What is the property type?"
+answers = [
+    "Site or Farm",
+    "Public Building",
+    "Other"
+]
+
+[[questions]]
+key = "permission"
+question = "Do you have permission to survey the property?"
+answers = [
+    "Yes, I am the owner",
+    "Yes, I have the owners permission",
+    "No"
+]
+
+[[questions]]
+key = "when"
+question = "When is the data required?"
+
+[[questions]]
+key = "description"
+question = "Please briefly describe the goals of the survey."

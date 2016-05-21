@@ -1,0 +1,27 @@
+# This is the Application config file
+
+title = "FacebookBot Configuration"
+
+[server]
+host = "127.0.0.1"
+port = 8000
+ssl_cert_file = "certs/fullchain.pem"
+ssl_key_file = "certs/privkey.pem"
+
+[logging]
+level = "DEBUG"
+dir = "logs"
+
+[facebook]
+page_id = 1711397162447122
+
+    [facebook.messages]
+    complete_questions = "Thanks for submitting your questions, the questionnaire is now complete and has been submitted!"
+
+    [facebook.welcome]
+    title = "Welcome to Ogma Development"
+    subtitle = "Please click the button below to begin our questionnaire."
+    button_text = "start"
+
+
+
